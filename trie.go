@@ -1,119 +1,103 @@
 package main
 
-import (
-	"fmt"
-	"os"
-	"io/ioutil"
-	"strings"
-)
-
 type Node struct {
-	word         string
-	wordEndsHere bool
-	children     map[byte]*Node
+	word     string
+	children map[byte]*Node
 }
 
 func NewNode() *Node {
-
 	children := make(map[byte]*Node)
-
 	return &Node{children:children}
 }
 
-func (t *Node) Insert(word string, index int) {
-
-	if index >= len(word) {
-		return
-	}
-
-	letter := word[index]
-
-	if _, ok := t.children[letter]; !ok {
-		t.children[letter] = NewNode()
-	}
-
-	if index + 1 == len(word) {
-
-		t.wordEndsHere = true
-		t.word = word
-
-	} else {
-		t.children[letter].Insert(word, index + 1)
-	}
+func (t *Node) Insert(word string) {
+	t.insertHelper(word, 0)
 }
 
-func (t *Node) Contains(word string, index int) bool {
+func (t *Node) insertHelper(word string, index int) *Node {
 
-	if len(word) == 0 {
+	if t == nil {
+		t = NewNode()
+	}
+
+	if len(word) == index {
+		t.word = word
+		return t
+	}
+
+	character := word[index]
+	t.children[character] = t.children[character].insertHelper(word, index + 1)
+
+	return t
+}
+
+func (t *Node) Get(word string) *Node {
+	return t.get(word, 0)
+}
+
+func (t *Node) get(word string, index int) *Node {
+
+	if t == nil {
+		return nil
+
+	} else if index == len(word) {
+		return t
+	}
+
+	character := word[index]
+	return t.children[character].get(word, index + 1)
+}
+
+func (t *Node) Contains(word string) bool {
+	return t.containsHelper(word, 0)
+}
+
+func (t *Node) containsHelper(word string, index int) bool {
+
+	if t == nil {
+
+		return false
+
+	} else if index == len(word) {
+
 		return true
 	}
 
-	if len(word) - 1 == index {
-		if t.wordEndsHere {
-			return true
-		} else {
-			return false
-		}
-	}
-
-	letter := word[index]
-
-	if _, ok := t.children[letter]; !ok {
-		return false
-	} else {
-		return t.children[letter].Contains(word, index + 1)
-	}
+	character := word[index]
+	return t.children[character].containsHelper(word, index + 1)
 }
 
-func (t *Node) GetAllWithPrefix(prefix string, index int) []string {
+func (t *Node) AllKeys() []string {
+	return t.KeysWithPrefix("")
+}
+
+func (t *Node) KeysWithPrefix(prefix string) []string {
+
+	root := t.Get(prefix)
+	results := root.collect(prefix)
+	return results
+}
+
+func (t *Node) collect(prefix string) []string {
 
 	results := make([]string, 0)
 
-	if index >= len(prefix) {
+	if t == nil {
 
-		for _, child := range t.children {
+		return results
 
-			if child.wordEndsHere {
+	} else if t.word != "" {
 
-				results = append(results, child.word)
+		results = append(results, t.word)
+	}
 
-			}
+	for _, child := range t.children {
 
-			for _, item := range child.GetAllWithPrefix(prefix, index) {
-				results = append(results, item)
-			}
-		}
+		for _, word := range child.collect(prefix) {
 
-	} else if _, ok := t.children[prefix[index]]; ok {
-
-		for _, item := range t.children[prefix[index]].GetAllWithPrefix(prefix, index + 1) {
-
-			results = append(results, item)
+			results = append(results, word)
 		}
 	}
 
 	return results
-}
-
-func main() {
-
-	contents, err := ioutil.ReadFile("/usr/share/dict/words")
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	words := strings.Split(string(contents), "\n")
-
-	trie := NewNode()
-
-	for _, word := range words {
-
-		trie.Insert(word, 0)
-	}
-
-	for _, word := range trie.GetAllWithPrefix("z", 0) {
-		fmt.Println(word)
-	}
 }
