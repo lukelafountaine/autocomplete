@@ -36,18 +36,44 @@ func populateTrie(words []string) {
 func main() {
 
 	query_file := os.Getenv("QUERY_FILE")
+	query_url := os.Getenv("QUERY_URL")
 
-	if query_file == "" {
-		fmt.Println("Set $QUERY_FILE to path to list of search queries")
+	var contents []byte
+	var resp *http.Response
+	var err error
+
+	if query_file != "" {
+
+		contents, err = ioutil.ReadFile(query_file)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+
+	} else if query_url != "" {
+
+		resp, err = http.Get(query_url)
+		defer resp.Body.Close()
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		contents, err = ioutil.ReadAll(resp.Body)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+	} else {
+		fmt.Println("Set $QUERY_FILE or $QUERY_URL to path or URL to list of search queries")
 		os.Exit(1)
 	}
 
-	contents, err := ioutil.ReadFile("/usr/share/dict/words")
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 
 	populateTrie(strings.Split(string(contents), "\n"))
 
