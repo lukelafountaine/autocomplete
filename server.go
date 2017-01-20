@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 )
 
-var trie = NewNode()
+var trie = NewTrie()
 
 func handler(w http.ResponseWriter, r *http.Request) {
 
@@ -55,12 +55,13 @@ func main() {
 	} else if query_url != "" {
 
 		resp, err = http.Get(query_url)
-		defer resp.Body.Close()
 
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
+		defer resp.Body.Close()
 
 		contents, err = ioutil.ReadAll(resp.Body)
 

@@ -1,41 +1,62 @@
 package main
 
-type Node struct {
+import (
+	"sort"
+)
+
+type Trie struct {
 	word     string
-	children map[byte]*Node
+	children map[byte]*Trie
+	count    int
 }
 
-func NewNode() *Node {
-	children := make(map[byte]*Node)
-	return &Node{children:children}
+// type to sort by word count
+type ByDescendingCount []*Trie
+
+func (t ByDescendingCount) Len() int {
+	return len(t)
+}
+func (t ByDescendingCount) Swap(i, j int) {
+	t[i], t[j] = t[j], t[i]
+}
+func (t ByDescendingCount) Less(i, j int) bool {
+	return t[i].count > t[j].count
 }
 
-func (t *Node) Insert(word string) {
+func NewTrie() *Trie {
+	children := make(map[byte]*Trie)
+	return &Trie{children:children}
+}
+
+func (t *Trie) Insert(word string) {
 	t.insertHelper(word, 0)
 }
 
-func (t *Node) insertHelper(word string, index int) *Node {
+func (t *Trie) insertHelper(word string, index int) *Trie {
 
 	if t == nil {
-		t = NewNode()
+		t = NewTrie()
 	}
 
 	if len(word) == index {
 		t.word = word
-		return t
-	}
+		t.count += 1
 
-	character := word[index]
-	t.children[character] = t.children[character].insertHelper(word, index + 1)
+	} else {
+
+		character := word[index]
+		t.children[character] = t.children[character].insertHelper(word, index + 1)
+
+	}
 
 	return t
 }
 
-func (t *Node) Get(word string) *Node {
+func (t *Trie) Get(word string) *Trie {
 	return t.get(word, 0)
 }
 
-func (t *Node) get(word string, index int) *Node {
+func (t *Trie) get(word string, index int) *Trie {
 
 	if t == nil {
 		return nil
@@ -48,11 +69,11 @@ func (t *Node) get(word string, index int) *Node {
 	return t.children[character].get(word, index + 1)
 }
 
-func (t *Node) Contains(word string) bool {
-	return t.containsHelper(word, 0)
+func (t *Trie) Contains(word string) bool {
+	return t.contains(word, 0)
 }
 
-func (t *Node) containsHelper(word string, index int) bool {
+func (t *Trie) contains(word string, index int) bool {
 
 	if t == nil {
 
@@ -64,23 +85,30 @@ func (t *Node) containsHelper(word string, index int) bool {
 	}
 
 	character := word[index]
-	return t.children[character].containsHelper(word, index + 1)
+	return t.children[character].contains(word, index + 1)
 }
 
-func (t *Node) AllKeys() []string {
+func (t *Trie) AllKeys() []string {
 	return t.KeysWithPrefix("")
 }
 
-func (t *Node) KeysWithPrefix(prefix string) []string {
+func (t *Trie) KeysWithPrefix(prefix string) []string {
 
 	root := t.Get(prefix)
 	results := root.collect(prefix)
-	return results
+
+	sort.Sort(ByDescendingCount(results))
+
+	words := make([]string, 0)
+	for _, node := range results {
+		words = append(words, node.word)
+	}
+	return words
 }
 
-func (t *Node) collect(prefix string) []string {
+func (t *Trie) collect(prefix string) []*Trie {
 
-	results := make([]string, 0)
+	results := make([]*Trie, 0)
 
 	if t == nil {
 
@@ -88,14 +116,14 @@ func (t *Node) collect(prefix string) []string {
 
 	} else if t.word != "" {
 
-		results = append(results, t.word)
+		results = append(results, t)
 	}
 
 	for _, child := range t.children {
 
-		for _, word := range child.collect(prefix) {
+		for _, trie := range child.collect(prefix) {
 
-			results = append(results, word)
+			results = append(results, trie)
 		}
 	}
 

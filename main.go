@@ -18,14 +18,15 @@ func main() {
 
 	words := strings.Split(string(contents), "\n")
 
-	trie := NewNode()
+	trie := NewTrie()
 
-	// test Insert
+	//// test Insert
 	for _, word := range words {
 		trie.Insert(word)
 	}
 
-	// test Contains
+
+	//// test Contains
 	for _, word := range words {
 		if !trie.Contains(word) {
 			fmt.Println(word)
@@ -33,10 +34,12 @@ func main() {
 	}
 
 	// test AllKeys
-	if len(trie.AllKeys()) != len(words) {
+	if len(trie.AllKeys()) != len(words) - 1 {
 		fmt.Println(len(trie.AllKeys()), len(words))
+	} else {
+		fmt.Println("AllKeys() works")
 	}
 
 	// test KeysWithPrefix
-	fmt.Println(trie.KeysWithPrefix("artifact"))
+	fmt.Println(trie.KeysWithPrefix(""))
 }
