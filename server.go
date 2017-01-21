@@ -37,6 +37,11 @@ func main() {
 
 	query_file := os.Getenv("QUERY_FILE")
 	query_url := os.Getenv("QUERY_URL")
+	port := os.Getenv("PORT")
+
+	if port == "" || rune(port[0]) != ':' {
+		port = ":80"
+	}
 
 	var contents []byte
 	var resp *http.Response
@@ -76,8 +81,10 @@ func main() {
 	}
 
 
+	fmt.Println("Populating the trie")
 	populateTrie(strings.Split(string(contents), "\n"))
 
+	fmt.Println("Listening...")
 	http.HandleFunc("/autocomplete", handler)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(port, nil)
 }
